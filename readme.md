@@ -13,6 +13,7 @@ A SBT plugin for [scala-js](https://github.com/lampepfl/scala-js) projects to ma
 To Use
 ------
 
+- Make sure you have Java 1.7 installed
 - Clone this from Github into a local directory
 - Add a dependency onto the scala-js-workbench project, e.g. in `project/project/Build.sbt`
 - Add `scala.js.workbench.buildSettingsX` to your project settings in `project/Build.sbt`
