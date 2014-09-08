@@ -20,6 +20,8 @@ resolvers += "spray repo" at "http://repo.spray.io"
 
 resolvers += "Typesafe repository" at "http://repo.typesafe.com/typesafe/releases/"
 
+resolvers += "bintray/non" at "http://dl.bintray.com/non/maven"
+
 addSbtPlugin("com.lihaoyi" % "workbench" % "0.2.0")
 ```
 - Add to your `build.sbt`
