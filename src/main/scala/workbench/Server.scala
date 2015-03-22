@@ -107,7 +107,7 @@ class Server(url: String, port: Int, bootSnippet: String) extends SimpleRoutingA
           (function(){
             $body
 
-            WorkbenchClient().main(${upickle.write(bootSnippet)}, ${upickle.write(url)}, ${upickle.write(port)})
+            WorkbenchClient().main(${upickle.write(bootSnippet)})
           }).call(this)
           """
         }
