@@ -51,15 +51,15 @@ You have a choice of what you want to do when the code compiles.
 #### refreshBrowsers
 
 ```scala
-refreshBrowsers <<= refreshBrowsers.triggeredBy(packageJS in Compile)
+refreshBrowsers <<= refreshBrowsers.triggeredBy(fastOptJS in Compile)
 ```
 
-This will to make any client browsers refresh every time `packageJS` completes, saving you flipping back and forth between SBT and the browser to refresh the page after compilation is finished.
+This will to make any client browsers refresh every time `fastOptJS` completes, saving you flipping back and forth between SBT and the browser to refresh the page after compilation is finished.
 
 #### updateBrowsers
 
 ```scala
-updateBrowsers <<= updateBrowsers.triggeredBy(packageJS in Compile)
+updateBrowsers <<= updateBrowsers.triggeredBy(fastOptJS in Compile)
 ```
 
 This will attempt to perform an update without refreshing the page every time `fastOptJS` completes. This involves:
