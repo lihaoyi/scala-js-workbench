@@ -2,7 +2,7 @@ package com.lihaoyi.workbench
 
 import java.util.concurrent.atomic.AtomicReference
 
-import akka.actor.{Actor, ActorSystem, Props}
+import akka.actor.{Actor, ActorSystem, Props, Terminated}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.coding.{Encoder, Gzip, NoCoding}
 import akka.http.scaladsl.model.HttpMethods._
@@ -49,7 +49,7 @@ class WorkbenchActor extends Actor {
     queuedMessages = Nil
   }
 
-  override def receive = {
+  override def receive: Receive = {
     case a: PromiseMessage =>
       // Even if there's someone already waiting,
       // a new actor waiting replaces the old one
@@ -81,10 +81,10 @@ class Server(
       `Access-Control-Allow-Headers`("Origin, X-Requested-With, Content-Type, Accept, Accept-Encoding, Accept-Language, Host, Referer, User-Agent"),
       `Access-Control-Max-Age`(1728000)
     )
-  val cl = getClass.getClassLoader
+  val cl: ClassLoader = getClass.getClassLoader
 
 
-  implicit val system = ActorSystem(
+  implicit val system: ActorSystem = ActorSystem(
     "Workbench-System",
     config = ConfigFactory.load(cl),
     classLoader = cl
@@ -115,9 +115,9 @@ class Server(
     */
 
 
-  implicit val materializer = ActorMaterializer()
+  implicit val materializer: ActorMaterializer = ActorMaterializer()
   // needed for the future map/flatmap in the end
-  implicit val executionContext = system.dispatcher
+  implicit val executionContext: ExecutionContext = system.dispatcher
 
   private val serverBinding = new AtomicReference[Http.ServerBinding]()
   private val encoder: Encoder = if (useCompression) Gzip else NoCoding
@@ -176,7 +176,7 @@ class Server(
         }
     }
 
-  def kill() = {
+  def kill(): Future[Terminated] = {
     system.terminate()
   }
 }

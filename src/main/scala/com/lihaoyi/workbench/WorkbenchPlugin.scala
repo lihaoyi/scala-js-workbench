@@ -1,4 +1,5 @@
 package com.lihaoyi.workbench
+
 import sbt._
 import sbt.Keys._
 import autowire._
@@ -20,7 +21,7 @@ object WorkbenchPlugin extends AutoPlugin {
   val workbenchSettings = Seq(
     refreshBrowsers := {
       streams.value.log.info("workbench: Reloading Pages...")
-      server.value.Wire[Api].reload().call()
+      server.value.Wire[WorkbenchApi].reload().call()
     },
     
     refreshBrowsers := refreshBrowsers.triggeredBy(fastOptJS in Compile).value

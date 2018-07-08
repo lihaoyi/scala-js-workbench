@@ -8,7 +8,7 @@ enablePlugins(WorkbenchPlugin)
 
 name := "Example"
 
-scalaVersion := "2.12.3"
+scalaVersion := "2.12.6"
 
 version := "0.1-SNAPSHOT"
 

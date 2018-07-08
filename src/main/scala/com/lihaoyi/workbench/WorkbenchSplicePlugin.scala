@@ -60,7 +60,7 @@ object WorkbenchSplicePlugin extends AutoPlugin {
           val s = munge(sbt.IO.read(new sbt.File(path.drop(prefix.length))))
 
           sbt.IO.write(new sbt.File(path.drop(prefix.length) + ".js"), s.getBytes)
-          server.value.Wire[Api].run(path + ".js").call()
+          server.value.Wire[WorkbenchApi].run(path + ".js").call()
         }
       }
     },

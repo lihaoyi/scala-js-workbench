@@ -19,14 +19,14 @@ object Wire extends autowire.Server[Js.Value, Reader, Writer] with ReadWrite {
   def wire(parsed: Js.Arr): Unit = {
     val Js.Arr(path, args: Js.Obj) = parsed
     val req = new Request(default.readJs[Seq[String]](path), args.value.toMap)
-    Wire.route[Api](WorkbenchClient).apply(req)
+    Wire.route[WorkbenchApi](WorkbenchClient).apply(req)
   }
 }
 
 @JSExportTopLevel("WorkbenchClient")
-object WorkbenchClient extends Api {
+object WorkbenchClient extends WorkbenchApi {
   @JSExport
-  lazy val shadowBody = dom.document.body.cloneNode(deep = true)
+  lazy val shadowBody: Node = dom.document.body.cloneNode(deep = true)
 
   @JSExport
   var interval = 1000
