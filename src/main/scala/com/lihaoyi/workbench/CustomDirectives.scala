@@ -1,6 +1,5 @@
 package com.lihaoyi.workbench
 
-
 import java.io.File
 
 import akka.event.LoggingAdapter

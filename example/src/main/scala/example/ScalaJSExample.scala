@@ -1,33 +1,35 @@
 package example
-import scala.scalajs.js.annotation.JSExport
-import org.scalajs.dom
-import org.scalajs.dom.html
+import scala.scalajs.js.annotation.{JSExportTopLevel, JSExport}
+import org.scalajs.dom.{html, document, window, CanvasRenderingContext2D}
 import scala.util.Random
 
-case class Point(x: Int, y: Int){
+case class Point(x: Int = Random.nextInt(255), 
+                 y: Int = Random.nextInt(255), 
+                 dx: Int = Random.nextInt(3) - 1, 
+                 dy: Int = Random.nextInt(3) - 1){
   def +(p: Point) = Point(x + p.x, y + p.y)
   def /(d: Int) = Point(x / d, y / d)
 }
 
-@JSExport
+@JSExportTopLevel("example.ScalaJSExample")
 object ScalaJSExample {
   val ctx =
-    dom.document
+    document
        .getElementById("canvas")
        .asInstanceOf[html.Canvas]
        .getContext("2d")
-       .asInstanceOf[dom.CanvasRenderingContext2D]
+       .asInstanceOf[CanvasRenderingContext2D]
 
   var p = Point(128, 128)
   var color = "black"
 
-  var enemiess = List.fill(10)(Point(util.Random.nextInt(255), util.Random.nextInt(255)))
+  var enemiess = List.fill(10)(Point())
   def clear() = {
     ctx.fillStyle = color
     ctx.fillRect(0, 0, 255, 255)
   }
 
-  def run = {
+  def run(time: Double): Unit = {
     clear()
     ctx.fillStyle = "yellow"
     p = Point(p.x, (p.y + 2) % 255)
@@ -35,11 +37,13 @@ object ScalaJSExample {
     enemiess = for (enemy <- enemiess) yield {
       ctx.fillStyle = "red"
       ctx.fillRect(enemy.x, enemy.y, 10, 10)
-      Point((enemy.x + 1) % 255, (enemy.y + 1) % 255)
+      enemy.copy(x = (enemy.x + enemy.dx + 255) % 255, y = (enemy.y + enemy.dy + 255) % 255)
     }
+    window.requestAnimationFrame(this.run)
   }
+
   @JSExport
   def main(): Unit = {
-    dom.window.setInterval(() => run, 10)
+    run(0)
   }
 }

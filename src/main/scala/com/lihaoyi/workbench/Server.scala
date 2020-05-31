@@ -2,7 +2,7 @@ package com.lihaoyi.workbench
 
 import java.util.concurrent.atomic.AtomicReference
 
-import akka.actor.{Actor, ActorSystem, Props}
+import akka.actor.{Actor, ActorSystem, Props, Terminated}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.coding.{Encoder, Gzip, NoCoding}
 import akka.http.scaladsl.model.HttpMethods._
@@ -11,21 +11,19 @@ import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
 import akka.http.scaladsl.settings.ServerSettings
-import akka.stream.ActorMaterializer
 import com.typesafe.config.ConfigFactory
 import sbt.IO
-import upickle.Js
 import upickle.default.{Reader, Writer}
 
 import scala.concurrent.{Future, _}
 import scala.concurrent.duration._
 import scala.util.{Failure, Success}
 
-case class PromiseMessage(p: Promise[Js.Arr])
+case class PromiseMessage(p: Promise[ujson.Arr])
 
 class WorkbenchActor extends Actor {
   private var waitingActors = List.empty[PromiseMessage]
-  private var queuedMessages = List.empty[Js.Value]
+  private var queuedMessages = List.empty[ujson.Value]
   private var numActorsLastRespond = 0
 
   /**
@@ -37,10 +35,10 @@ class WorkbenchActor extends Actor {
   private val system = context.system
   import system.dispatcher
 
-  system.scheduler.schedule(0.seconds, 10.seconds, self, Clear)
+  system.scheduler.scheduleWithFixedDelay(0.seconds, 10.seconds, self, Clear)
 
   private def respond(): Unit = {
-    val messages = Js.Arr(queuedMessages: _*)
+    val messages = ujson.Arr(queuedMessages: _*)
     waitingActors.foreach { a =>
       a.p.success(messages)
     }
@@ -49,7 +47,7 @@ class WorkbenchActor extends Actor {
     queuedMessages = Nil
   }
 
-  override def receive = {
+  override def receive: Receive = {
     case a: PromiseMessage =>
       // Even if there's someone already waiting,
       // a new actor waiting replaces the old one
@@ -58,7 +56,7 @@ class WorkbenchActor extends Actor {
       if (queuedMessages.nonEmpty && numActorsLastRespond > 0 && waitingActors.size >= numActorsLastRespond)
         respond()
 
-    case msg: Js.Arr =>
+    case msg: ujson.Arr =>
       queuedMessages = msg :: queuedMessages
       if (waitingActors.nonEmpty) respond()
 
@@ -81,10 +79,10 @@ class Server(
       `Access-Control-Allow-Headers`("Origin, X-Requested-With, Content-Type, Accept, Accept-Encoding, Accept-Language, Host, Referer, User-Agent"),
       `Access-Control-Max-Age`(1728000)
     )
-  val cl = getClass.getClassLoader
+  val cl: ClassLoader = getClass.getClassLoader
 
 
-  implicit val system = ActorSystem(
+  implicit val system: ActorSystem = ActorSystem(
     "Workbench-System",
     config = ConfigFactory.load(cl),
     classLoader = cl
@@ -93,10 +91,10 @@ class Server(
   /**
     * The connection from workbench server to the client
     */
-  object Wire extends autowire.Client[Js.Value, Reader, Writer] with ReadWrite {
-    def doCall(req: Request): Future[Js.Value] = {
-      longPoll ! Js.Arr(upickle.default.writeJs(req.path), Js.Obj(req.args.toSeq: _*))
-      Future.successful(Js.Null)
+  object Wire extends autowire.Client[ujson.Value, Reader, Writer] with ReadWrite {
+    def doCall(req: Request): Future[ujson.Value] = {
+      longPoll ! ujson.Arr(upickle.default.writeJs(req.path), ujson.Obj.from(req.args))
+      Future.successful(ujson.Null)
     }
   }
 
@@ -115,9 +113,8 @@ class Server(
     */
 
 
-  implicit val materializer = ActorMaterializer()
   // needed for the future map/flatmap in the end
-  implicit val executionContext = system.dispatcher
+  implicit val executionContext: ExecutionContext = system.dispatcher
 
   private val serverBinding = new AtomicReference[Http.ServerBinding]()
   private val encoder: Encoder = if (useCompression) Gzip else NoCoding
@@ -167,16 +164,16 @@ class Server(
         CustomDirectives.getFromBrowseableDirectories(rootDirectory.getOrElse(".")) ~
         post {
           path("notifications") {
-            val p = Promise[Js.Arr]
+            val p = Promise[ujson.Arr]
             longPoll ! PromiseMessage(p)
             onSuccess(p.future) { v =>
-              complete(HttpResponse(entity = HttpEntity(ContentType(MediaTypes.`application/json`), upickle.json.write(v))).withHeaders(corsHeaders: _*))
+              complete(HttpResponse(entity = HttpEntity(ContentType(MediaTypes.`application/json`), ujson.write(v))).withHeaders(corsHeaders: _*))
             }
           }
         }
     }
 
-  def kill() = {
+  def kill(): Future[Terminated] = {
     system.terminate()
   }
 }

@@ -1,21 +1,18 @@
 package com.lihaoyi.workbench
 
-import sbt._
-import sbt.Keys._
 import autowire._
-import org.scalajs.sbtplugin.ScalaJSPlugin
-
-import org.apache.logging.log4j.message._
-
-import org.apache.logging.log4j.core.{LogEvent => Log4JLogEvent, _}
 import org.apache.logging.log4j.core.appender.AbstractAppender
 import org.apache.logging.log4j.core.layout.PatternLayout
-
-import scala.concurrent.ExecutionContext.Implicits.global
+import org.apache.logging.log4j.core.{LogEvent => Log4JLogEvent}
+import org.apache.logging.log4j.message._
+import org.scalajs.sbtplugin.ScalaJSPlugin
+import sbt.Keys._
+import sbt._
 
 object WorkbenchBasePlugin extends AutoPlugin {
+  import scala.concurrent.ExecutionContext.Implicits.global
 
-  override def requires = ScalaJSPlugin
+  override def requires: AutoPlugin = ScalaJSPlugin
 
   object autoImport {
 
@@ -51,27 +48,28 @@ object WorkbenchBasePlugin extends AutoPlugin {
       val clientLogger = new AbstractAppender(
         "FakeAppender",
         null,
-        PatternLayout.createDefaultLayout()) {
+        PatternLayout.createDefaultLayout(),
+        true,
+        Array.empty) {
         override def append(event: Log4JLogEvent): Unit = {
 
           val level = sbt.internal.util.ConsoleAppender.toLevel(event.getLevel)
           val message = event.getMessage
 
           message match {
-            case o: ObjectMessage => {
+            case o: ObjectMessage =>
               o.getParameter match {
-                case e: sbt.internal.util.StringEvent => server.value.Wire[Api].print(level.toString, e.message).call()
-                case e: sbt.internal.util.ObjectEvent[_] => server.value.Wire[Api].print(level.toString, e.message.toString).call()
-                case _ => server.value.Wire[Api].print(level.toString, message.getFormattedMessage).call()
+                case e: sbt.internal.util.StringEvent => server.value.Wire[WorkbenchApi].print(level.toString, e.message).call()
+                case e: sbt.internal.util.ObjectEvent[_] => server.value.Wire[WorkbenchApi].print(level.toString, e.message.toString).call()
+                case _ => server.value.Wire[WorkbenchApi].print(level.toString, message.getFormattedMessage).call()
               }
-            }
-            case _ => server.value.Wire[Api].print(level.toString, message.getFormattedMessage).call()
+            case _ => server.value.Wire[WorkbenchApi].print(level.toString, message.getFormattedMessage).call()
           }
         }
       }
       clientLogger.start()
       val currentFunction = extraLoggers.value
-      (key: ScopedKey[_]) => clientLogger +: currentFunction(key)
+      key: ScopedKey[_] => clientLogger +: currentFunction(key)
     },
     server := {
       val server = new Server(localUrl.value._1, localUrl.value._2,
@@ -95,8 +93,6 @@ object WorkbenchBasePlugin extends AutoPlugin {
     }
   )
 
-  private def getScopeId(scope: ScopeAxis[sbt.Reference]): String = {
-    "" + scope.hashCode()
-  }
-  override def projectSettings = workbenchSettings
+  private def getScopeId(scope: ScopeAxis[sbt.Reference]): String = s"${scope.hashCode()}"
+  override def projectSettings: Seq[Setting[_]] = workbenchSettings
 }
