@@ -16,7 +16,7 @@ object WorkbenchPlugin extends AutoPlugin {
   }
   import autoImport._
   import WorkbenchBasePlugin.server
-  import ScalaJSPlugin.AutoImport._
+  import ScalaJSPlugin.autoImport._
 
   val workbenchSettings = Seq(
     refreshBrowsers := {

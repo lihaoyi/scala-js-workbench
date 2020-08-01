@@ -3,14 +3,13 @@ package com.lihaoyi
 package object workbench {
 
   import upickle.default.{Reader, Writer}
-  import upickle.Js
 
   /**
     * A standard way to read and write `Js.Value`s with autowire/upickle
     */
   trait ReadWrite {
     def write[Result: Writer](r: Result) = upickle.default.writeJs(r)
-    def read[Result: Reader](p: Js.Value) = upickle.default.readJs[Result](p)
+    def read[Result: Reader](p: ujson.Value) = upickle.default.read[Result](p)
   }
 
   /**
@@ -23,6 +22,7 @@ package object workbench {
       * Reset the HTML page to its initial state
       */
     def clear(): Unit
+
     /**
       * Reload the entire webpage
       */

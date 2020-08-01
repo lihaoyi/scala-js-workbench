@@ -18,7 +18,7 @@ object WorkbenchSplicePlugin extends AutoPlugin {
   import autoImport._
   import WorkbenchBasePlugin.autoImport._
   import WorkbenchBasePlugin.server
-  import ScalaJSPlugin.AutoImport._
+  import ScalaJSPlugin.autoImport._
 
   val spliceSettings = Seq(
     updatedJS := {

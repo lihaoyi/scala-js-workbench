@@ -2,6 +2,7 @@ package com.lihaoyi.workbench
 
 import autowire._
 import org.apache.logging.log4j.core.appender.AbstractAppender
+import org.apache.logging.log4j.core.config.Property
 import org.apache.logging.log4j.core.layout.PatternLayout
 import org.apache.logging.log4j.core.{LogEvent => Log4JLogEvent}
 import org.apache.logging.log4j.message._
@@ -10,6 +11,7 @@ import sbt.Keys._
 import sbt._
 
 object WorkbenchBasePlugin extends AutoPlugin {
+
   import scala.concurrent.ExecutionContext.Implicits.global
 
   override def requires: AutoPlugin = ScalaJSPlugin
@@ -35,6 +37,7 @@ object WorkbenchBasePlugin extends AutoPlugin {
       "should the web server start on sbt load, on compile, or only by manually running `startWorkbenchServer`")
     val startWorkbenchServer = taskKey[Unit]("start local web server manually")
   }
+
   import autoImport._
   import WorkbenchStartModes._
 
@@ -48,7 +51,9 @@ object WorkbenchBasePlugin extends AutoPlugin {
       val clientLogger = new AbstractAppender(
         "FakeAppender",
         null,
-        PatternLayout.createDefaultLayout()) {
+        PatternLayout.createDefaultLayout(),
+        true,
+        Property.EMPTY_ARRAY) {
         override def append(event: Log4JLogEvent): Unit = {
 
           val level = sbt.internal.util.ConsoleAppender.toLevel(event.getLevel)
@@ -92,5 +97,6 @@ object WorkbenchBasePlugin extends AutoPlugin {
   )
 
   private def getScopeId(scope: ScopeAxis[sbt.Reference]): String = s"${scope.hashCode()}"
+
   override def projectSettings: Seq[Setting[_]] = workbenchSettings
 }
