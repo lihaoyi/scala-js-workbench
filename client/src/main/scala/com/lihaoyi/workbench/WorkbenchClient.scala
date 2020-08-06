@@ -1,37 +1,38 @@
 package com.lihaoyi.workbench
 
-import upickle.Js
-import upickle.default
-import upickle.default.{Reader, Writer}
-import upickle.json
 import org.scalajs.dom
 import org.scalajs.dom.ext._
+import org.scalajs.dom.raw._
+import ujson.Value.Value
+import upickle.default
+import upickle.default.{Reader, Writer}
 
+import scala.collection.mutable.ArrayBuffer
+import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.scalajs.js
 import scala.scalajs.js.annotation.{JSExport, JSExportTopLevel}
-import scalajs.concurrent.JSExecutionContext.Implicits.queue
-import org.scalajs.dom.raw._
 
 /**
   * The connection from workbench server to the client
   */
-object Wire extends autowire.Server[Js.Value, Reader, Writer] with ReadWrite {
-  def wire(parsed: Js.Arr): Unit = {
-    val Js.Arr(path, args: Js.Obj) = parsed
-    val req = new Request(default.readJs[Seq[String]](path), args.value.toMap)
-    Wire.route[Api](WorkbenchClient).apply(req)
+object Wire extends autowire.Server[ujson.Value, Reader, Writer] with ReadWrite {
+  def wire(parsed: ArrayBuffer[Value]): Unit = {
+    val jsObj = parsed.drop(1).head.obj.toMap
+    val req = new Request(default.read[Seq[String]](parsed.head), jsObj)
+    Wire.route[WorkbenchApi](WorkbenchClient).apply(req)
   }
 }
 
 @JSExportTopLevel("WorkbenchClient")
-object WorkbenchClient extends Api {
+object WorkbenchClient extends WorkbenchApi {
   @JSExport
-  lazy val shadowBody = dom.document.body.cloneNode(deep = true)
+  lazy val shadowBody: Node = dom.document.body.cloneNode(deep = true)
 
   @JSExport
   var interval = 1000
   @JSExport
   var success = false
+
   @JSExport
   def main(host: String, port: Int): Unit = {
     def rec(): Unit = {
@@ -40,10 +41,10 @@ object WorkbenchClient extends Api {
           if (!success) println("Workbench connected")
           success = true
           interval = 1000
-          json.read(data.responseText)
-            .asInstanceOf[Js.Arr]
-            .value
-            .foreach(v => Wire.wire(v.asInstanceOf[Js.Arr]))
+          ujson
+            .read(data.responseText)
+            .arr
+            .foreach(v => Wire.wire(v.arr))
           rec()
         case util.Failure(e) =>
           if (success) println("Workbench disconnected " + e)

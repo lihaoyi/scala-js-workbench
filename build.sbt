@@ -2,18 +2,21 @@ import sbt.Keys._
 
 val defaultSettings = Seq(
   scalacOptions ++= Seq("-feature", "-deprecation"),
-  unmanagedSourceDirectories in Compile += baseDirectory.value /  "shared" / "main" / "scala",
+  unmanagedSourceDirectories in Compile += baseDirectory.value / "shared" / "main" / "scala",
   unmanagedSourceDirectories in Test += baseDirectory.value / "shared" / "test" / "scala"
 )
 
-lazy val root = project.in(file(".")).settings(defaultSettings:_*).settings(
+lazy val root = project.in(file(".")).settings(defaultSettings: _*).settings(
   name := "workbench",
-  version := "0.4.1",
-  organization := "com.lihaoyi",
-  scalaVersion := "2.12.4",
+  version := "0.4.4",
+  organization := "com.sa",
+  scalaVersion := "2.12.12",
   sbtPlugin := true,
   publishArtifact in Test := false,
-  publishTo := Some("releases" at "https://oss.sonatype.org/service/local/staging/deploy/maven2"),
+  publishTo := Some("releases" at "https://nexus.s-art.co.nz/repository/maven-releases"),
+  //  publishTo := Some("Nexus" at "http://nexus.financialplatforms.co.nz:8081/nexus/content/repositories/releases"),
+  credentials += Credentials(Path.userHome / ".ivy2" / ".credentials.sa"),
+  credentials += Credentials(Path.userHome / ".ivy2" / ".credentials.fp"),
   pomExtra :=
     <url>https://github.com/lihaoyi/workbench</url>
       <licenses>
@@ -35,13 +38,14 @@ lazy val root = project.in(file(".")).settings(defaultSettings:_*).settings(
       </developers>
   ,
   (resources in Compile) += {
-    (fullOptJS in (client, Compile)).value
-    (artifactPath in (client, Compile, fullOptJS)).value
+    (fullOptJS in(client, Compile)).value
+    (artifactPath in(client, Compile, fullOptJS)).value
   },
-  addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.21"),
+  addSbtPlugin("org.scala-js" % "sbt-scalajs" % "1.1.1"),
   libraryDependencies ++= Seq(
     Dependencies.akkaHttp,
     Dependencies.akka,
+    Dependencies.akkaStream,
     Dependencies.autowire.value,
     Dependencies.upickle.value
   )
@@ -57,5 +61,5 @@ lazy val client = project.in(file("client"))
       Dependencies.dom.value,
       Dependencies.upickle.value
     ),
-    emitSourceMaps := false
+    scalaJSLinkerConfig ~= { _.withSourceMap(false) }
   )
